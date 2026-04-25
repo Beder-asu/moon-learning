@@ -97,15 +97,32 @@ export function YouTubePlayer({ videoId, courseId, levelId, title }: YouTubePlay
     <div className="space-y-4">
       <div className="aspect-video bg-foreground rounded-lg overflow-hidden">
         {isPlaying ? (
-          <iframe
-            width="100%"
-            height="100%"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-            title={title}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://drive.google.com/file/d/${videoId}/preview`}
+              title={title}
+              frameBorder="0"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              style={{ position: 'absolute', top: 0, left: 0 }}
+            ></iframe>
+
+            {/* Block pop-out button (top-right) */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '60px',
+                height: '60px',
+                zIndex: 10,
+                cursor: 'default'
+              }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            ></div>
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <div className="text-center">

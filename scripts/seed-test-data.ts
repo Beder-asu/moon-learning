@@ -1,11 +1,14 @@
 import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://mobeder888:MObeder88%23@cluster0.uxdvs3j.mongodb.net/?appName=Cluster0";
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  throw new Error("MONGODB_URI environment variable is not set. Please add it to .env.local or set it in your environment.");
+}
 const DB_NAME = "moonlearning";
 
 async function seedTestData() {
-  const client = new MongoClient(MONGODB_URI);
+  const client = new MongoClient(MONGODB_URI as string);
 
   try {
     await client.connect();
@@ -57,16 +60,20 @@ async function seedTestData() {
     // Create test courses
     const course1Id = new ObjectId();
     const course2Id = new ObjectId();
+    const course3Id = new ObjectId();
+    const course4Id = new ObjectId();
+    const course5Id = new ObjectId();
+    const course6Id = new ObjectId();
 
     const testCourses = [
       {
         _id: course1Id,
         title: "Beginner Chess Fundamentals",
         description: "Learn the basics of chess including piece movement, opening principles, and basic tactics.",
-        instructor: "Placeholder Instructor One",
+        instructor: "Grandmaster Alex",
         price: 500,
         currency: "EGP",
-        image: "/images/course-placeholder-1.jpg",
+        image: "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?auto=format&fit=crop&q=80&w=800",
         level: "Beginner",
         duration: "4 weeks",
         totalLevels: 3,
@@ -77,13 +84,69 @@ async function seedTestData() {
         _id: course2Id,
         title: "Intermediate Chess Strategy",
         description: "Master advanced tactical patterns, positional understanding, and endgame techniques.",
-        instructor: "Placeholder Instructor Two",
+        instructor: "International Master Sarah",
         price: 750,
         currency: "EGP",
-        image: "/images/course-placeholder-2.jpg",
+        image: "https://images.unsplash.com/photo-1586165368502-1bad197a6461?auto=format&fit=crop&q=80&w=800",
         level: "Intermediate",
         duration: "6 weeks",
         totalLevels: 4,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        _id: course3Id,
+        title: "Advanced Chess Endgames",
+        description: "Deep dive into complex endgame scenarios, pawn structures, and theoretical draws.",
+        instructor: "Grandmaster Magnus",
+        price: 1200,
+        currency: "EGP",
+        image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800",
+        level: "Advanced",
+        duration: "8 weeks",
+        totalLevels: 5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        _id: course4Id,
+        title: "Chess Openings Masterclass",
+        description: "Build a solid opening repertoire for both White and Black. Covers Ruy Lopez, Sicilian, and more.",
+        instructor: "Grandmaster Hikaru",
+        price: 900,
+        currency: "EGP",
+        image: "https://images.unsplash.com/photo-1452827073306-6e6e661baf57?auto=format&fit=crop&q=80&w=800",
+        level: "Intermediate",
+        duration: "5 weeks",
+        totalLevels: 4,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        _id: course5Id,
+        title: "Tactics and Calculation",
+        description: "Improve your visualization skills and learn to calculate deep variations with precision.",
+        instructor: "Grandmaster Fabiano",
+        price: 800,
+        currency: "EGP",
+        image: "https://images.unsplash.com/photo-1580541832626-2a7131ee809f?auto=format&fit=crop&q=80&w=800",
+        level: "Intermediate",
+        duration: "6 weeks",
+        totalLevels: 4,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        _id: course6Id,
+        title: "Psychology of Competitive Chess",
+        description: "Learn how to manage time pressure, handle losses, and stay focused during long tournaments.",
+        instructor: "Dr. Chess Mind",
+        price: 600,
+        currency: "EGP",
+        image: "https://images.unsplash.com/photo-1560174038-da43ac74f01b?auto=format&fit=crop&q=80&w=800",
+        level: "All Levels",
+        duration: "3 weeks",
+        totalLevels: 3,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -244,9 +307,9 @@ async function seedTestData() {
     console.log("Password: admin123\n");
 
     console.log("TEST DATA CREATED:");
-    console.log("- 2 Test Courses");
-    console.log("- 3 Test Levels");
-    console.log("- 3 Test Videos");
+    console.log(`- ${testCourses.length} Test Courses`);
+    console.log(`- ${testLevels.length} Test Levels`);
+    console.log(`- ${testVideos.length} Test Videos`);
     console.log("- 1 Test Quiz");
     console.log("- 1 Sample Pending Payment (for testing Vodafone verification)\n");
 
