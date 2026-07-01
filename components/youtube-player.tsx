@@ -19,6 +19,7 @@ export function YouTubePlayer({ videoId, courseId, levelId, title }: YouTubePlay
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isMobileFullscreen, setIsMobileFullscreen] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [hasFullAccess, setHasFullAccess] = useState(false)
 
@@ -59,6 +60,18 @@ export function YouTubePlayer({ videoId, courseId, levelId, title }: YouTubePlay
     loadViewStatus()
   }, [videoId, courseId, isAuthenticated, user])
 
+  // Prevent scrolling when in fullscreen
+  useEffect(() => {
+    if (isMobileFullscreen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [isMobileFullscreen])
+
   const handlePlayClick = async () => {
     if (isLimitReached && !hasFullAccess) {
       alert("You have reached the maximum view limit for this video. Purchase the course for unlimited access.")
@@ -85,6 +98,9 @@ export function YouTubePlayer({ videoId, courseId, levelId, title }: YouTubePlay
         setViewCount(data.viewCount)
         setRemainingViews(data.remainingViews)
         setIsPlaying(true)
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+          setIsMobileFullscreen(true)
+        }
       } else {
         setIsLimitReached(true)
         setRemainingViews(0)
@@ -98,39 +114,39 @@ export function YouTubePlayer({ videoId, courseId, levelId, title }: YouTubePlay
 
   return (
     <div className="space-y-4">
-      <div className="aspect-video bg-foreground rounded-lg overflow-hidden">
+      <div className={isMobileFullscreen ? "fixed inset-0 z-[100] bg-black flex items-center justify-center" : "relative w-full h-[220px] sm:h-[300px] md:h-[400px] lg:h-[450px] rounded-lg overflow-hidden bg-foreground"}>
         {isPlaying ? (
-          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <>
             <iframe
-              width="100%"
-              height="100%"
+              className="absolute top-0 left-0 w-full h-full"
               src={`https://drive.google.com/file/d/${videoId}/preview`}
               title={title}
-              frameBorder="0"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              style={{ position: 'absolute', top: 0, left: 0 }}
+              style={{ border: 0 }}
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             ></iframe>
 
-            {/* Block pop-out button (top-right) */}
+            {/* Block pop-out button (top-right) - Active on all devices to prevent bypassing limits */}
             <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '60px',
-                height: '60px',
-                zIndex: 10,
-                cursor: 'default'
-              }}
+              className="absolute top-0 right-0 w-[50px] h-[50px] md:w-[60px] md:h-[60px] z-10 cursor-default"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onTouchStart={(e) => { e.stopPropagation(); }}
             ></div>
-          </div>
+
+            {/* Close Fullscreen Button (mobile) */}
+            {isMobileFullscreen && (
+              <button
+                onClick={() => setIsMobileFullscreen(false)}
+                className="absolute top-4 left-4 w-10 h-10 z-20 bg-black/60 text-white rounded-full flex items-center justify-center"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            )}
+          </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-muted">
             <div className="text-center">
               <div className="text-3xl mb-4">▶</div>
-              <p className="text-foreground font-semibold mb-4">{title}</p>
+              <p className="text-foreground font-semibold mb-4 px-4">{title}</p>
               <Button
                 onClick={handlePlayClick}
                 disabled={loading || (isLimitReached && !hasFullAccess)}
