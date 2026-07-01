@@ -103,6 +103,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         if (storedUser) {
                             setUser(JSON.parse(storedUser))
                         }
+                        
+                        // Silently fetch latest user data from DB to ensure it isn't stale 
+                        // (e.g. if an admin just approved a payment)
+                        fetch("/api/auth/me", {
+                            headers: { Authorization: `Bearer ${storedToken}` },
+                        })
+                        .then(res => res.json())
+                        .then(meData => {
+                            if (meData.success) {
+                                setUser(meData.user)
+                                localStorage.setItem(USER_KEY, JSON.stringify(meData.user))
+                            }
+                        })
+                        .catch(e => console.error("Background refresh error:", e))
                     } else {
                         // Token invalid or session ended - clear storage
                         console.log("[v0] Session invalid:", data.reason)
