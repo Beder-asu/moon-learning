@@ -171,6 +171,8 @@ export default function SignupPage() {
           variant="outline"
           className="w-full rounded-full border-foreground text-foreground hover:bg-foreground hover:text-background mb-4 bg-transparent"
           disabled={loading}
+          onClick={() => window.location.href = '/api/auth/google'}
+          type="button"
         >
           Sign up with Google
         </Button>

@@ -133,6 +133,8 @@ export default function LoginPage() {
           variant="outline"
           className="w-full rounded-full border-foreground text-foreground hover:bg-foreground hover:text-background mb-4 bg-transparent"
           disabled={loading}
+          onClick={() => window.location.href = '/api/auth/google'}
+          type="button"
         >
           Continue with Google
         </Button>

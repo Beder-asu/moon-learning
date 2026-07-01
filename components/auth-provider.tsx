@@ -28,6 +28,7 @@ interface AuthContextType {
     signup: (name: string, email: string, password: string, vodafoneNumber?: string) => Promise<{ success: boolean; error?: string }>
     logout: () => Promise<void>
     refreshUser: () => Promise<void>
+    finishOAuthLogin: (token: string, sessionId: string, deviceId: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -250,6 +251,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [token])
 
+    const finishOAuthLogin = useCallback(async (newToken: string, newSessionId: string, newDeviceId: string) => {
+        localStorage.setItem(TOKEN_KEY, newToken)
+        localStorage.setItem(SESSION_ID_KEY, newSessionId)
+        localStorage.setItem(DEVICE_ID_KEY, newDeviceId)
+        
+        setToken(newToken)
+        setSessionId(newSessionId)
+        setDeviceId(newDeviceId)
+
+        // Fetch latest user data from DB
+        try {
+            const meResponse = await fetch("/api/auth/me", {
+                headers: { Authorization: `Bearer ${newToken}` },
+            })
+            const meData = await meResponse.json()
+            if (meData.success) {
+                setUser(meData.user)
+                localStorage.setItem(USER_KEY, JSON.stringify(meData.user))
+            }
+        } catch (e) {
+            console.error("[v0] OAuth user fetch error:", e)
+        }
+    }, [])
+
     return (
         <AuthContext.Provider
             value={{
@@ -263,6 +288,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 signup,
                 logout,
                 refreshUser,
+                finishOAuthLogin,
             }}
         >
             {children}
