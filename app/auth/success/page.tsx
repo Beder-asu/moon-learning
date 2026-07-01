@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 
-export default function AuthSuccessPage() {
+function AuthSuccessContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { finishOAuthLogin } = useAuth()
@@ -24,10 +24,17 @@ export default function AuthSuccessPage() {
         }
     }, [searchParams, finishOAuthLogin, router])
 
+    return null
+}
+
+export default function AuthSuccessPage() {
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center">
             <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-foreground font-medium">Completing login...</p>
+            <Suspense fallback={null}>
+                <AuthSuccessContent />
+            </Suspense>
         </div>
     )
 }
