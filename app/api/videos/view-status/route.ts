@@ -1,5 +1,6 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { verifyToken } from "@/lib/auth";
 
 const MAX_VIEWS = 5;
 
@@ -18,6 +19,16 @@ export async function GET(request: Request) {
 
         // Check if user has full access to the course (purchased)
         let hasFullAccess = false;
+
+        // Admins always have full access
+        const authHeader = request.headers.get("authorization");
+        const token = authHeader?.replace("Bearer ", "");
+        if (token) {
+            const payload = verifyToken(token);
+            if (payload?.role === "admin") {
+                hasFullAccess = true;
+            }
+        }
 
         if (userId !== "anonymous") {
             // Check for verified payment

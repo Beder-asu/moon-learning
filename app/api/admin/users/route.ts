@@ -1,8 +1,11 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireAdmin } from "@/lib/auth";
 
 // GET all users
 export async function GET(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const role = searchParams.get("role");
@@ -34,6 +37,8 @@ export async function GET(request: Request) {
 
 // POST create new user
 export async function POST(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { email, name, password, role, vodafoneNumber } = body;
@@ -77,6 +82,8 @@ export async function POST(request: Request) {
 
 // PUT update user
 export async function PUT(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { id, email, name, role, vodafoneNumber, status, enrolledCourses } = body;
@@ -113,6 +120,8 @@ export async function PUT(request: Request) {
 
 // DELETE user
 export async function DELETE(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");

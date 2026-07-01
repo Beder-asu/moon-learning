@@ -1,4 +1,5 @@
 import { getDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 export async function POST(request: Request) {
   try {
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     // If approved, add course access to user
     if (action === "approve") {
       await db.collection("users").updateOne(
-        { _id: userId },
+        { _id: new ObjectId(userId) },
         {
           $addToSet: {
             enrolledCourses: {

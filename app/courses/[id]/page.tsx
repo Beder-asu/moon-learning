@@ -68,8 +68,6 @@ export default function CourseDetailsPage() {
         (enrollment) => enrollment.courseId === courseId
       )
       setIsEnrolled(enrolled)
-    } else if (user?.role === "admin") {
-      setIsEnrolled(true) // Admins have access to all courses
     } else {
       setIsEnrolled(false)
     }

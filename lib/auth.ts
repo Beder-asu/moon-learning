@@ -214,3 +214,34 @@ export function generateDeviceId(): string {
     const { v4: uuidv4 } = require("uuid");
     return uuidv4();
 }
+
+// Guard helper for admin-only API routes.
+// Returns { error: Response } when the caller is not an authenticated admin,
+// or { payload: JWTPayload } when they are.
+export async function requireAdmin(
+    request: Request
+): Promise<{ error: Response; payload?: never } | { payload: JWTPayload; error?: never }> {
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "") ?? getCookieFromRequest(request, SESSION_COOKIE_NAME);
+
+    if (!token) {
+        return {
+            error: Response.json({ error: "Unauthorized" }, { status: 401 }),
+        };
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+        return {
+            error: Response.json({ error: "Invalid or expired token" }, { status: 401 }),
+        };
+    }
+
+    if (payload.role !== "admin") {
+        return {
+            error: Response.json({ error: "Forbidden: admin access required" }, { status: 403 }),
+        };
+    }
+
+    return { payload };
+}

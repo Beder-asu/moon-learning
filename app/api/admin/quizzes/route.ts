@@ -1,8 +1,11 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireAdmin } from "@/lib/auth";
 
 // GET all quizzes (optionally filtered by levelId or courseId)
 export async function GET(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const levelId = searchParams.get("levelId");
@@ -55,6 +58,8 @@ export async function GET(request: Request) {
 
 // POST create new quiz
 export async function POST(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { levelId, courseId, title, passingScore, questions } = body;
@@ -116,6 +121,8 @@ export async function POST(request: Request) {
 
 // PUT update quiz
 export async function PUT(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { id, title, passingScore, questions, status } = body;
@@ -162,6 +169,8 @@ export async function PUT(request: Request) {
 
 // DELETE quiz
 export async function DELETE(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");

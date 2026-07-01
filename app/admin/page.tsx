@@ -4,11 +4,29 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { useAuth } from "@/components/auth-provider"
+import { useRouter } from "next/navigation"
 
 export default function AdminDashboard() {
+  const { user, token, isLoading } = useAuth()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<"payments" | "courses" | "levels" | "videos" | "quizzes" | "users">(
     "payments",
   )
+
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== "admin")) {
+      router.replace("/login")
+    }
+  }, [user, isLoading, router])
+
+  if (isLoading || !user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Checking access...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,12 +77,12 @@ export default function AdminDashboard() {
         {/* Main Content */}
         <div className="flex-1 overflow-auto">
           <div className="p-8">
-            {activeTab === "payments" && <PendingPaymentsSection />}
-            {activeTab === "courses" && <CourseManagement onNavigate={setActiveTab} />}
-            {activeTab === "levels" && <LevelManagement onNavigate={setActiveTab} />}
-            {activeTab === "videos" && <VideoManagement />}
-            {activeTab === "quizzes" && <QuizManagement />}
-            {activeTab === "users" && <UserManagement />}
+            {activeTab === "payments" && <PendingPaymentsSection token={token!} />}
+            {activeTab === "courses" && <CourseManagement onNavigate={setActiveTab} token={token!} />}
+            {activeTab === "levels" && <LevelManagement onNavigate={setActiveTab} token={token!} />}
+            {activeTab === "videos" && <VideoManagement token={token!} />}
+            {activeTab === "quizzes" && <QuizManagement token={token!} />}
+            {activeTab === "users" && <UserManagement token={token!} />}
           </div>
         </div>
       </div>
@@ -72,7 +90,8 @@ export default function AdminDashboard() {
   )
 }
 
-function PendingPaymentsSection() {
+
+function PendingPaymentsSection({ token }: { token: string }) {
   const [pendingPayments, setPendingPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
@@ -81,7 +100,9 @@ function PendingPaymentsSection() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const response = await fetch("/api/admin/payments")
+        const response = await fetch("/api/admin/payments", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         const data = await response.json()
         if (data.success) {
           setPendingPayments(data.payments)
@@ -100,7 +121,7 @@ function PendingPaymentsSection() {
     try {
       const response = await fetch("/api/payments/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           paymentId: payment.id,
           courseId: payment.courseId,
@@ -132,7 +153,7 @@ function PendingPaymentsSection() {
     try {
       const response = await fetch("/api/payments/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           paymentId: payment.id,
           courseId: payment.courseId,
@@ -274,7 +295,7 @@ function PendingPaymentsSection() {
   )
 }
 
-function CourseManagement({ onNavigate }: { onNavigate: (tab: "payments" | "courses" | "levels" | "videos" | "quizzes" | "users") => void }) {
+function CourseManagement({ onNavigate, token }: { onNavigate: (tab: "payments" | "courses" | "levels" | "videos" | "quizzes" | "users") => void; token: string }) {
   const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -288,7 +309,9 @@ function CourseManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cour
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch("/api/admin/courses")
+      const response = await fetch("/api/admin/courses", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const data = await response.json()
       if (data.success) setCourses(data.courses)
     } catch (error) {
@@ -310,7 +333,7 @@ function CourseManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cour
       const body = editingId
         ? { id: editingId, ...formData, price: parseFloat(formData.price) }
         : { ...formData, price: parseFloat(formData.price) }
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) })
       const data = await response.json()
       if (data.success) {
         fetchCourses()
@@ -395,7 +418,7 @@ function CourseManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cour
   )
 }
 
-function LevelManagement({ onNavigate }: { onNavigate: (tab: "payments" | "courses" | "levels" | "videos" | "quizzes" | "users") => void }) {
+function LevelManagement({ onNavigate, token }: { onNavigate: (tab: "payments" | "courses" | "levels" | "videos" | "quizzes" | "users") => void; token: string }) {
   const [levels, setLevels] = useState<any[]>([])
   const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -410,7 +433,11 @@ function LevelManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cours
 
   const fetchData = async () => {
     try {
-      const [levelsRes, coursesRes] = await Promise.all([fetch("/api/admin/levels"), fetch("/api/admin/courses")])
+      const authHeaders = { Authorization: `Bearer ${token}` }
+      const [levelsRes, coursesRes] = await Promise.all([
+        fetch("/api/admin/levels", { headers: authHeaders }),
+        fetch("/api/admin/courses", { headers: authHeaders })
+      ])
       const [levelsData, coursesData] = await Promise.all([levelsRes.json(), coursesRes.json()])
       if (levelsData.success) setLevels(levelsData.levels)
       if (coursesData.success) setCourses(coursesData.courses)
@@ -425,7 +452,7 @@ function LevelManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cours
       const url = "/api/admin/levels"
       const method = editingId ? "PUT" : "POST"
       const body = editingId ? { id: editingId, ...formData, orderNumber: parseInt(formData.orderNumber) } : { ...formData, orderNumber: parseInt(formData.orderNumber) }
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) })
       const data = await response.json()
       if (data.success) { fetchData(); setShowForm(false); setEditingId(null); setFormData({ title: "", courseId: "", description: "", orderNumber: "1" }); alert(editingId ? "Level updated!" : "Level created!") }
       else alert("Error: " + data.error)
@@ -436,7 +463,7 @@ function LevelManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cours
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this level and all its videos and quizzes?")) return
     try {
-      const response = await fetch(`/api/admin/levels?id=${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/admin/levels?id=${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
       const data = await response.json()
       if (data.success) { fetchData(); alert("Level deleted!") } else alert("Error: " + data.error)
     } catch (error) { console.error("Error deleting level:", error); alert("Failed to delete level") }
@@ -498,7 +525,7 @@ function LevelManagement({ onNavigate }: { onNavigate: (tab: "payments" | "cours
   )
 }
 
-function VideoManagement() {
+function VideoManagement({ token }: { token: string }) {
   const [videos, setVideos] = useState<any[]>([])
   const [levels, setLevels] = useState<any[]>([])
   const [courses, setCourses] = useState<any[]>([])
@@ -512,7 +539,12 @@ function VideoManagement() {
 
   const fetchData = async () => {
     try {
-      const [videosRes, levelsRes, coursesRes] = await Promise.all([fetch("/api/admin/videos"), fetch("/api/admin/levels"), fetch("/api/admin/courses")])
+      const authHeaders = { Authorization: `Bearer ${token}` }
+      const [videosRes, levelsRes, coursesRes] = await Promise.all([
+        fetch("/api/admin/videos", { headers: authHeaders }),
+        fetch("/api/admin/levels", { headers: authHeaders }),
+        fetch("/api/admin/courses", { headers: authHeaders })
+      ])
       const [videosData, levelsData, coursesData] = await Promise.all([videosRes.json(), levelsRes.json(), coursesRes.json()])
       if (videosData.success) setVideos(videosData.videos)
       if (levelsData.success) setLevels(levelsData.levels)
@@ -530,11 +562,11 @@ function VideoManagement() {
     if (!formData.title || !formData.levelId || !formData.youtubeId) { alert("Please fill in all required fields"); return }
     setSaving(true)
     try {
-      const youtubeId = extractYouTubeId(formData.youtubeId)
+      const driveId = formData.youtubeId.trim()
       const url = "/api/admin/videos"
       const method = editingId ? "PUT" : "POST"
-      const body = editingId ? { id: editingId, ...formData, youtubeId, orderNumber: parseInt(formData.orderNumber) } : { ...formData, youtubeId, orderNumber: parseInt(formData.orderNumber) }
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const body = editingId ? { id: editingId, ...formData, youtubeId: driveId, orderNumber: parseInt(formData.orderNumber) } : { ...formData, youtubeId: driveId, orderNumber: parseInt(formData.orderNumber) }
+      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) })
       const data = await response.json()
       if (data.success) { fetchData(); setShowForm(false); setEditingId(null); setFormData({ title: "", levelId: "", courseId: "", youtubeId: "", duration: "", orderNumber: "1" }); alert(editingId ? "Video updated!" : "Video created!") }
       else alert("Error: " + data.error)
@@ -545,7 +577,7 @@ function VideoManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this video?")) return
     try {
-      const response = await fetch(`/api/admin/videos?id=${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/admin/videos?id=${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
       const data = await response.json()
       if (data.success) { fetchData(); alert("Video deleted!") } else alert("Error: " + data.error)
     } catch (error) { console.error("Error deleting video:", error); alert("Failed to delete video") }
@@ -582,7 +614,7 @@ function VideoManagement() {
           </div>
           <div><label className="block text-sm font-medium text-foreground mb-2">Video Title *</label><Input placeholder="Enter video title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-foreground mb-2">YouTube URL or Video ID *</label><Input placeholder="https://youtube.com/watch?v=... or dQw4w9WgXcQ" value={formData.youtubeId} onChange={(e) => setFormData({ ...formData, youtubeId: e.target.value })} /></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-foreground mb-2">Google Drive File ID *</label><Input placeholder="e.g. 1knKIQ_8LC4Q6XLHIrBzbucR8u1XYCbf6" value={formData.youtubeId} onChange={(e) => setFormData({ ...formData, youtubeId: e.target.value.trim() })} /></div>
             <div><label className="block text-sm font-medium text-foreground mb-2">Duration</label><Input placeholder="12:34" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} /></div>
           </div>
           <div><label className="block text-sm font-medium text-foreground mb-2">Order Number</label><Input type="number" placeholder="1" value={formData.orderNumber} onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })} min="1" /></div>
@@ -601,11 +633,11 @@ function VideoManagement() {
                 <div><p className="text-xs text-muted-foreground mb-1">Level</p><p className="font-semibold text-foreground truncate">{getLevelName(video.levelId)}</p></div>
                 <div><p className="text-xs text-muted-foreground mb-1">Duration</p><p className="font-semibold text-foreground">{video.duration || "N/A"}</p></div>
                 <div><p className="text-xs text-muted-foreground mb-1">Order</p><p className="font-semibold text-foreground">#{video.orderNumber}</p></div>
-                <div><p className="text-xs text-muted-foreground mb-1">YouTube ID</p><p className="font-mono text-xs text-foreground truncate">{video.youtubeId}</p></div>
+                <div><p className="text-xs text-muted-foreground mb-1">Drive File ID</p><p className="font-mono text-xs text-foreground truncate">{video.youtubeId}</p></div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="text-sm rounded-full border-foreground bg-transparent" onClick={() => { setEditingId(video.id); setFormData({ title: video.title || "", levelId: video.levelId || "", courseId: video.courseId || "", youtubeId: video.youtubeId || "", duration: video.duration || "", orderNumber: video.orderNumber?.toString() || "1" }); setShowForm(true) }}>Edit</Button>
-                <Button variant="outline" className="text-sm rounded-full border-foreground bg-transparent" onClick={() => window.open(`https://youtube.com/watch?v=${video.youtubeId}`, "_blank")}>Preview</Button>
+                <Button variant="outline" className="text-sm rounded-full border-foreground bg-transparent" onClick={() => window.open(`https://drive.google.com/file/d/${video.youtubeId}/preview`, "_blank")}>Preview</Button>
                 <Button variant="outline" className="text-sm rounded-full border-destructive text-destructive hover:bg-destructive/10 bg-transparent" onClick={() => handleDelete(video.id)}>Delete</Button>
               </div>
             </div>
@@ -616,7 +648,7 @@ function VideoManagement() {
   )
 }
 
-function QuizManagement() {
+function QuizManagement({ token }: { token: string }) {
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [levels, setLevels] = useState<any[]>([])
   const [courses, setCourses] = useState<any[]>([])
@@ -632,7 +664,12 @@ function QuizManagement() {
 
   const fetchData = async () => {
     try {
-      const [quizzesRes, levelsRes, coursesRes] = await Promise.all([fetch("/api/admin/quizzes"), fetch("/api/admin/levels"), fetch("/api/admin/courses")])
+      const authHeaders = { Authorization: `Bearer ${token}` }
+      const [quizzesRes, levelsRes, coursesRes] = await Promise.all([
+        fetch("/api/admin/quizzes", { headers: authHeaders }),
+        fetch("/api/admin/levels", { headers: authHeaders }),
+        fetch("/api/admin/courses", { headers: authHeaders })
+      ])
       const [quizzesData, levelsData, coursesData] = await Promise.all([quizzesRes.json(), levelsRes.json(), coursesRes.json()])
       if (quizzesData.success) setQuizzes(quizzesData.quizzes)
       if (levelsData.success) setLevels(levelsData.levels)
@@ -648,7 +685,7 @@ function QuizManagement() {
       const url = "/api/admin/quizzes"
       const method = editingId ? "PUT" : "POST"
       const body = editingId ? { id: editingId, ...formData, passingScore: parseInt(formData.passingScore) } : { ...formData, passingScore: parseInt(formData.passingScore) }
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) })
       const data = await response.json()
       if (data.success) { fetchData(); setShowForm(false); setEditingId(null); setFormData({ title: "", levelId: "", courseId: "", passingScore: "51", questions: [] }); alert(editingId ? "Quiz updated!" : "Quiz created!") }
       else alert("Error: " + data.error)
@@ -659,7 +696,7 @@ function QuizManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this quiz?")) return
     try {
-      const response = await fetch(`/api/admin/quizzes?id=${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/admin/quizzes?id=${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
       const data = await response.json()
       if (data.success) { fetchData(); alert("Quiz deleted!") } else alert("Error: " + data.error)
     } catch (error) { console.error("Error deleting quiz:", error); alert("Failed to delete quiz") }
@@ -771,7 +808,7 @@ function QuizManagement() {
   )
 }
 
-function UserManagement() {
+function UserManagement({ token }: { token: string }) {
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -783,7 +820,9 @@ function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users")
+      const response = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const data = await response.json()
       if (data.success) setUsers(data.users)
     } catch (error) { console.error("Error fetching users:", error) }
@@ -797,7 +836,7 @@ function UserManagement() {
       const url = "/api/admin/users"
       const method = editingId ? "PUT" : "POST"
       const body = editingId ? { id: editingId, ...formData } : formData
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) })
       const data = await response.json()
       if (data.success) { fetchUsers(); setShowForm(false); setEditingId(null); setFormData({ name: "", email: "", phone: "", role: "student" }); alert(editingId ? "User updated!" : "User created!") }
       else alert("Error: " + data.error)
@@ -808,7 +847,7 @@ function UserManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return
     try {
-      const response = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
       const data = await response.json()
       if (data.success) { fetchUsers(); alert("User deleted!") } else alert("Error: " + data.error)
     } catch (error) { console.error("Error deleting user:", error); alert("Failed to delete user") }

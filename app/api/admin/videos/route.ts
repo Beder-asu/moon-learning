@@ -1,8 +1,11 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireAdmin } from "@/lib/auth";
 
 // GET all videos (optionally filtered by levelId or courseId)
 export async function GET(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const levelId = searchParams.get("levelId");
@@ -56,6 +59,8 @@ export async function GET(request: Request) {
 
 // POST create new video
 export async function POST(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { levelId, courseId, title, description, youtubeId, duration, orderNumber } = body;
@@ -111,6 +116,8 @@ export async function POST(request: Request) {
 
 // PUT update video
 export async function PUT(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { id, title, description, youtubeId, duration, orderNumber, status } = body;
@@ -147,6 +154,8 @@ export async function PUT(request: Request) {
 
 // DELETE video
 export async function DELETE(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");

@@ -1,8 +1,11 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireAdmin } from "@/lib/auth";
 
 // GET all courses
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const db = await getDatabase();
         const courses = await db.collection("courses").find({}).sort({ createdAt: -1 }).toArray();
@@ -44,6 +47,8 @@ export async function GET() {
 
 // POST create new course
 export async function POST(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { title, description, instructor, price, currency, image, level, duration } = body;
@@ -82,6 +87,8 @@ export async function POST(request: Request) {
 
 // PUT update course
 export async function PUT(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { id, title, description, instructor, price, currency, image, level, duration, status } = body;
@@ -121,6 +128,8 @@ export async function PUT(request: Request) {
 
 // DELETE course
 export async function DELETE(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");

@@ -1,7 +1,10 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireAdmin } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const db = await getDatabase();
 

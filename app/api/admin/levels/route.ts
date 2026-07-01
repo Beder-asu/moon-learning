@@ -1,8 +1,11 @@
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { requireAdmin } from "@/lib/auth";
 
 // GET all levels (optionally filtered by courseId)
 export async function GET(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const courseId = searchParams.get("courseId");
@@ -49,6 +52,8 @@ export async function GET(request: Request) {
 
 // POST create new level
 export async function POST(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { courseId, title, description, orderNumber } = body;
@@ -95,6 +100,8 @@ export async function POST(request: Request) {
 
 // PUT update level
 export async function PUT(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const body = await request.json();
         const { id, title, description, orderNumber, hasQuiz, status } = body;
@@ -130,6 +137,8 @@ export async function PUT(request: Request) {
 
 // DELETE level
 export async function DELETE(request: Request) {
+    const auth = await requireAdmin(request);
+    if (auth.error) return auth.error;
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");

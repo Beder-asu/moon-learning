@@ -36,7 +36,10 @@ export function YouTubePlayer({ videoId, courseId, levelId, title }: YouTubePlay
     const loadViewStatus = async () => {
       try {
         const userId = getUserId()
-        const response = await fetch(`/api/videos/view-status?userId=${userId}&videoId=${videoId}&courseId=${courseId}`)
+        const token = localStorage.getItem("auth_token")
+        const headers: HeadersInit = {}
+        if (token) headers["Authorization"] = `Bearer ${token}`
+        const response = await fetch(`/api/videos/view-status?userId=${userId}&videoId=${videoId}&courseId=${courseId}`, { headers })
         const data = await response.json()
 
         if (data.success) {
